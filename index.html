@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minecraft Circle Outline</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Roboto', sans-serif; background:#f0f2f5; color:#333; display:flex; flex-direction:column; min-height:100vh; transition: background 0.3s, color 0.3s; }
+    header { background:linear-gradient(135deg, #4a90e2, #1456a0); padding:20px; }
+    header .container { max-width:800px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+    header h1 { font-size:1.8rem; color:#fff; display:flex; align-items:center; gap:10px; }
+    .rotating-icon { display:inline-block; animation: rotateIcon 2s linear infinite; }
+    @keyframes rotateIcon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    header .controls-header { display: flex; gap: 10px; align-items: center; }
+    header button.toggle { background:none; border:none; color:#fff; font-size:1.4rem; cursor:pointer; }
+    #langSelect {
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #8e44ad, #3498db);
+        color: #fff;
+        font-weight: bold;
+        transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23fff"><path d="M4 6l4 4 4-4"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+    }
+
+    #langSelect:hover {
+        transform: scale(1.1);
+        background: linear-gradient(135deg, #3498db, #8e44ad);
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #langSelect option {
+        background: #8e44ad;
+        color: #fff;
+    }
+
+    main { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .card { background:#fff; padding:20px; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:100%; max-width:600px; }
+    .controls { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; margin-bottom:20px; }
+    .controls label { font-weight:500; }
+    .controls input { padding:8px 10px; font-size:1rem; width:100px; border:1px solid #ccc; border-radius:4px; transition: border-color 0.3s; }
+    .controls input:focus { border-color:#4a90e2; outline:none; }
+    .controls button { padding:8px 16px; font-size:1rem; background:#4a90e2; color:#fff; border:none; border-radius:4px; cursor:pointer; transition: background 0.3s; }
+    .controls button:hover { background:#407ac1; }
+    #canvasWrapper { text-align:center; overflow:auto; }
+    canvas { border:1px solid #ddd; border-radius:4px; transition: box-shadow 0.3s; max-width:100%; height:auto; }
+    canvas:hover { box-shadow:0 4px 12px rgba(0,0,0,0.15); }
+    #blockCount { text-align:center; margin-top:10px; font-weight:600; }
+    footer { text-align:center; padding:15px; background:#e9ecef; font-size:0.9rem; }
+    .heart { display:inline-block; animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    body.dark { background:#18191a; color:#e4e6eb; }
+    body.dark header { background:linear-gradient(135deg, #3a3b3c, #202225); }
+    body.dark .card { background:#242526; box-shadow:0 4px 12px rgba(0,0,0,0.5); }
+    body.dark .controls input { background:#3a3b3c; border:1px solid #555; color:#e4e6eb; }
+    body.dark .controls input:focus { border-color:#7289da; }
+    body.dark .controls button { background:#7289da; }
+    body.dark canvas { border:1px solid #555; }
+    body.dark footer { background:#242526; color:#b0b3b8; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>
+        <i class="fas fa-circle-notch rotating-icon"></i>
+        <span id="titleText">Minecraft Circle Outline</span>
+      </h1>
+      <div class="controls-header">
+        <button id="toggleTheme" class="toggle"><i class="fas fa-sun"></i></button>
+        <select id="langSelect">
+          <option value="en" selected>EN</option>
+          <option value="hu">HU</option>
+        </select>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div class="card">
+      <div class="controls">
+        <label id="labelDiameter" for="diameter">Diameter (in blocks):</label>
+        <input type="number" id="diameter" value="" min="3">
+        <button id="drawBtn">Draw</button>
+        <button id="downloadBtn">Download</button>
+      </div>
+      <div id="canvasWrapper">
+        <canvas id="canvas"></canvas>
+      </div>
+      <p id="blockCount"></p>
+    </div>
+  </main>
+  <footer>
+    Created by KrixH99 with <span class="heart">❤️</span>
+  </footer>
+  <script>
+    const translations = {
+      hu: {
+        title: "Minecraft Körvonal Generátor",
+        labelDiameter: "Átmérő (blokkjában):",
+        drawButton: "Rajzol",
+        downloadButton: "Letöltés",
+        errorMessage: "Nem lehetséges",
+        blockCountPrefix: "Blokk szám: "
+      },
+      en: {
+        title: "Minecraft Circle Outline",
+        labelDiameter: "Diameter (in blocks):",
+        drawButton: "Draw",
+        downloadButton: "Download",
+        errorMessage: "Not possible",
+        blockCountPrefix: "Block count: "
+      }
+    };
+    let currentLang = document.getElementById('langSelect').value;
+    const gridSize = 30, padding = 20, MAX_DIAMETER = 100,
+          canvas = document.getElementById('canvas'),
+          ctx = canvas.getContext('2d'),
+          drawBtn = document.getElementById('drawBtn'),
+          downloadBtn = document.getElementById('downloadBtn'),
+          diameterInput = document.getElementById('diameter'),
+          toggleTheme = document.getElementById('toggleTheme'),
+          langSelect = document.getElementById('langSelect'),
+          blockCountElem = document.getElementById('blockCount'),
+          titleText = document.getElementById('titleText'),
+          labelDiameter = document.getElementById('labelDiameter');
+
+    function updateLanguage() {
+      currentLang = langSelect.value;
+      titleText.textContent = translations[currentLang].title;
+      labelDiameter.textContent = translations[currentLang].labelDiameter;
+      drawBtn.textContent = translations[currentLang].drawButton;
+      downloadBtn.textContent = translations[currentLang].downloadButton;
+      render();
+    }
+
+    function adjustCanvas(width, height) { 
+      canvas.width = width; 
+      canvas.height = height; 
+    }
+
+    function drawGrid(blocks) {
+      const lightColor = 'rgba(0,0,0,0.8)', darkColor = 'rgba(255,255,255,0.8)';
+      ctx.strokeStyle = document.body.classList.contains('dark') ? darkColor : lightColor;
+      for (let i = 0; i <= blocks; i++) {
+        let x = padding + i * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, padding + blocks * gridSize);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= blocks; j++) {
+        let y = padding + j * gridSize;
+        ctx.beginPath();
+        ctx.moveTo(padding, y);
+        ctx.lineTo(padding + blocks * gridSize, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawCircleOutline(diameter) {
+      adjustCanvas(diameter * gridSize + 2 * padding, diameter * gridSize + 2 * padding);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const radius = diameter / 2,
+            centerX = padding + (diameter / 2) * gridSize,
+            centerY = padding + (diameter / 2) * gridSize;
+      let count = 0;
+      for (let i = 0; i < diameter; i++) {
+        for (let j = 0; j < diameter; j++) {
+          const bx = i + 0.5, by = j + 0.5;
+          if ((bx - radius) ** 2 + (by - radius) ** 2 <= radius ** 2) {
+            let outline = false;
+            for (let di = -1; di <= 1; di++) {
+              for (let dj = -1; dj <= 1; dj++) {
+                if (di === 0 && dj === 0) continue;
+                const ni = i + di, nj = j + dj;
+                if (ni < 0 || ni >= diameter || nj < 0 || nj >= diameter) outline = true;
+                else {
+                  const nbx = ni + 0.5, nby = nj + 0.5;
+                  if ((nbx - radius) ** 2 + (nby - radius) ** 2 > radius ** 2) outline = true;
+                }
+              }
+            }
+            if (outline) { 
+              ctx.fillStyle = '#e74c3c';
+              ctx.fillRect(padding + i * gridSize, padding + j * gridSize, gridSize, gridSize);
+              count++;
+            }
+          }
+        }
+      }
+      ctx.fillStyle = '#ff0000';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, gridSize / 4, 0, 2 * Math.PI);
+      ctx.fill();
+      drawGrid(diameter);
+      blockCountElem.textContent = translations[currentLang].blockCountPrefix + count;
+    }
+
+    function drawError() {
+      const errorSize = 400;
+      adjustCanvas(errorSize, errorSize);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = document.body.classList.contains('dark') ? "#e4e6eb" : "#333";
+      ctx.font = "bold 24px Roboto, sans-serif";
+      const message = translations[currentLang].errorMessage,
+            textWidth = ctx.measureText(message).width;
+      const img = new Image();
+      img.src = "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Minecraft-creeper-face.jpg/800px-Minecraft-creeper-face.jpg";
+      img.onload = () => {
+        const imgWidth = 100, imgHeight = 100,
+              imgX = (canvas.width - imgWidth) / 2,
+              imgY = (canvas.height - imgHeight) / 2 - 20;
+        ctx.drawImage(img, imgX, imgY, imgWidth, imgHeight);
+        const textX = (canvas.width - textWidth) / 2,
+              textY = imgY + imgHeight + 40;
+        ctx.fillText(message, textX, textY);
+      }
+      setTimeout(() => {
+        if (!img.complete) {
+          const textX = (canvas.width - textWidth) / 2,
+                textY = canvas.height / 2;
+          ctx.fillText(message, textX, textY);
+        }
+      }, 2000);
+      blockCountElem.textContent = "";
+    }
+
+    function render() {
+      const d = parseInt(diameterInput.value, 10);
+      if (isNaN(d) || d < 3) return;
+      if (d > MAX_DIAMETER) drawError();
+      else drawCircleOutline(d);
+    }
+
+    drawBtn.addEventListener('click', render);
+    diameterInput.addEventListener('keydown', e => { if (e.key === 'Enter') render(); });
+    downloadBtn.addEventListener('click', () => {
+      const d = parseInt(diameterInput.value, 10);
+      if (isNaN(d)) return;
+      const imageName = d + " diameter" + "_created_by_KrixH99.png";
+      const link = document.createElement('a');
+      link.download = imageName;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+    toggleTheme.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      toggleTheme.innerHTML = document.body.classList.contains('dark')
+        ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      render();
+    });
+    langSelect.addEventListener('change', updateLanguage);
+    window.addEventListener('load', () => {
+      document.body.classList.add('dark');
+      toggleTheme.innerHTML = '<i class="fas fa-sun"></i>';
+      updateLanguage();
+    });
+  </script>
+</body>
+</html>
